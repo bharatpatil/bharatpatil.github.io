@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="jquery.min.js"></script>
+  <meta charset="utf-8">
+  <title>KineticJS - Draw line using mouse</title>
+  <script src="kinetic.min.js"></script>
+  <style>
+  .kineticjs-content{
+    border:1px solid black;
+  }
+</style>
+</head>
+<body>
+
+<div id="canvasArea">	
+</div>
+
+<script>
+$(document).ready(function(){  
+  tool.init();
+});
+
+var tool = {}, stage, layer, tmpLayer;
+
+//add tool specific variables
+tool.isStarted = false;
+tool.startPoint = undefined;
+
+//mousedown for line
+tool.line_mousedown = function(evt) {
+  console.log('line_mousedown');
+  //store start point relative to canvas
+  tool.startPoint = getRelativePointerPosition();
+  //set started flag to true
+  tool.started = true;
+  //add temporary layer to stage
+  stage.add(tmpLayer);  
+};
+
+//mousemove for line
+tool.line_mousemove = function(evt) {
+  console.log('line_mousemove');
+  //if drawing of tool (line) is not started then exit
+  if(!tool.started) {
+    return;
+  }
+
+  //get x,y co-ordinate relative to canvas
+  var tempPoint = getRelativePointerPosition();
+  if(tempPoint !== undefined && tool.startPoint !== undefined) {
+    //create kinetic line instance
+    var tmpLine = new Kinetic.Line({
+      points: [tool.startPoint.x, tool.startPoint.y, tempPoint.x, tempPoint.y],
+      stroke: '#C00000',
+      strokeWidth: 1
+    });
+    //remove previous line off temporary layer
+    tmpLayer.removeChildren();
+    //add current line to temporary canvas
+    tmpLayer.add(tmpLine);
+    //draw temporary layer to draw previously added line instance
+    tmpLayer.draw();      
+  }  
+};
+
+tool.line_mouseup = function(evt) {
+  console.log('line_mouseup');
+  if (tool.started) {
+    //get x,y co-ordinate relative to canvas
+    var tempPoint = getRelativePointerPosition();
+    if(tempPoint !== undefined && tool.startPoint !== undefined) {
+      //create kinetic line instance
+      var tmpLine = new Kinetic.Line({
+        points: [tool.startPoint.x, tool.startPoint.y, tempPoint.x, tempPoint.y],
+        stroke: '#C00000',
+        strokeWidth: 1
+      });    
+      //destroy temporary layer      
+      tmpLayer.destroy();
+      //add previously created line instance to main layer
+      layer.add(tmpLine);
+      //draw layer to draw previously added line instance
+      layer.draw();     
+    }
+    //set started flag to false
+    tool.started = false;
+  }  
+};
+
+tool.init = function() {
+  stage = new Kinetic.Stage({
+    container: 'canvasArea',
+    width: 500,
+    height: 200,
+    draggable: false
+  });
+
+  layer = new Kinetic.Layer({
+    name: 'layer'
+  });
+  
+  tmpLayer = new Kinetic.Layer({
+    name: 'tmpLayer'
+  });
+
+  stage.add(layer);
+
+  $('#canvasArea .kineticjs-content').on('mousedown', tool.line_mousedown);
+  $('#canvasArea .kineticjs-content').on('mousemove', tool.line_mousemove);
+  $('#canvasArea .kineticjs-content').on('mouseup', tool.line_mouseup);
+
+}
+
+//get mouse position relative to canvas element used inside mouse events
+var getRelativePointerPosition = function() {
+    var pointer = stage.getPointerPosition();
+    if (pointer === undefined) return undefined;
+    var pos = stage.getPosition();
+    var offset = stage.getOffset();
+    var scale = stage.getScale();
+    return {
+        x: ((pointer.x / scale.x) - (pos.x / scale.x) + offset.x),
+        y: ((pointer.y / scale.y) - (pos.y / scale.y) + offset.y)
+    };
+};
+</script>
+</body>
+</html>
